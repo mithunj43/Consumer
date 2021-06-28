@@ -1,0 +1,33 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017,localhost:27018,localhost:27019/?readPreference=primary&ssl=false
+      database: office
+  kafka:
+    listener:
+      ack-mode: manual-immediate
+    consumer:
+      enable-auto-commit: false
+      properties:
+        spring.json.trusted.packages: "com.wf.publisherBT.entity"
+      bootstrap-servers: localhost:9092
+      group-id: group_id
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+enable:
+  auto:
+    commit: false
+logging:
+  level:
+    org:
+      springframework:
+        data:
+          mongodb:
+            core:
+              MongoTemplate: DEBUG
+
+
+
+
