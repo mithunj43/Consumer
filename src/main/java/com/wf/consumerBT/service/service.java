@@ -52,13 +52,16 @@ public class service {
         int maxScenarios = risks.size();
 
         List<Sigma> sigmas = sigmaCacheGetter.sigmaCache;
+        List<CallPrice> callPrices = new ArrayList<>(5000*75);
         for (int i = 0; i < maxScenarios; i++) {
 
-            calculateCallPriceForEachScenario(trade,risks.get(i),sigmas.get(i),i);
+            callPrices.addAll(calculateCallPriceForEachScenario(trade,risks.get(i),sigmas.get(i),i));
         }
+        callRepository.saveAll(callPrices);
+
     }
 
-    private void calculateCallPriceForEachScenario(Trade trade,Risk risk,Sigma sigma,int index){
+    private List<CallPrice> calculateCallPriceForEachScenario(Trade trade,Risk risk,Sigma sigma,int index){
         String riskString = getRiskString(risk) ;
         String sigmaString = getSigmaString(sigma);
 
@@ -67,6 +70,7 @@ public class service {
 
         String[] sigmaArray = sigmaString.split("~");
         DecimalFormat df = new DecimalFormat("0.00");
+        List<CallPrice> res = new ArrayList<>();
         for (int i = 0; i < colCount; i++) {
 
 
@@ -92,10 +96,12 @@ public class service {
             callPriceDoc.setVersion("1");
             callPriceDocs.add(callPriceDoc);
 
-            callRepository.save(callPrice);
+            //callRepository.save(callPrice);
+            res.add(callPrice);
 
 
         }
+        return res;
 
     }
 
