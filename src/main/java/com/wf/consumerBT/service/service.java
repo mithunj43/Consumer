@@ -71,36 +71,29 @@ public class service {
         String[] sigmaArray = sigmaString.split("~");
         DecimalFormat df = new DecimalFormat("0.00");
         List<CallPrice> res = new ArrayList<>();
+
+        CallPrice callPrice = new CallPrice();
+        callPrice.setTradeId(trade.getTradeId());
+        callPrice.setOutputDataFile(trade.getOutputDataFile());
+        List<CallPriceDoc> callPriceDocs = new ArrayList<>();
+        callPrice.setCallPriceDocs(callPriceDocs);
+        callPrice.setScenarioRow(index);
+        CallPriceDoc callPriceDoc = new CallPriceDoc();
+        callPriceDoc.setVersion("1");
+        callPriceDocs.add(callPriceDoc);
+        List<Double> prices = new ArrayList<>(76);
+        callPriceDoc.setCallPrice(prices);
+
         for (int i = 0; i < colCount; i++) {
-
-
             double price = stockPrice.callPrice(trade.getInitialIndexLevel(),
                     trade.getStrikePrice(),
                     Double.parseDouble(df.format(new Double(risksArray[i]))),
                     Double.parseDouble(df.format(new Double(sigmaArray[i]))),
                     trade.getTimeToMaturity());
 
-
-            CallPrice callPrice = new CallPrice();
-
-            List<CallPriceDoc> callPriceDocs = new ArrayList<>();
-
-            callPrice.setTradeId(trade.getTradeId());
-            callPrice.setOutputDataFile(trade.getOutputDataFile());
-            callPrice.setCallPriceDocs(callPriceDocs);
-            callPrice.setScenarioRow(index);
-            callPrice.setScenarioCol(i);
-
-            CallPriceDoc callPriceDoc = new CallPriceDoc();
-            callPriceDoc.setCallPrice(price);
-            callPriceDoc.setVersion("1");
-            callPriceDocs.add(callPriceDoc);
-
-            //callRepository.save(callPrice);
-            res.add(callPrice);
-
-
+            prices.add(price);
         }
+        res.add(callPrice);
         return res;
 
     }

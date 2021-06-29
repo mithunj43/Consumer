@@ -2,13 +2,15 @@ package com.wf.consumerBT.entity;
 
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.util.List;
+
 public class CallPriceDoc {
 
     @Field("version")
     public String version;
 
     @Field("callPrice")
-    private Double callPrice;
+    private List<Double> callPrice;
 
     public String getVersion() {
         return version;
@@ -18,11 +20,11 @@ public class CallPriceDoc {
         this.version = version;
     }
 
-    public Double getCallPrice() {
+    public List<Double> getCallPrice() {
         return callPrice;
     }
 
-    public void setCallPrice(Double callPrice) {
+    public void setCallPrice(List<Double> callPrice) {
         this.callPrice = callPrice;
     }
 
