@@ -1,5 +1,7 @@
 package com.wf.consumerBT.service;
 
+import akka.actor.typed.ActorSystem;
+import com.wf.consumerBT.actor.GreeterMain;
 import com.wf.consumerBT.cache.RiskCache;
 import com.wf.consumerBT.cache.SigmaCache;
 import com.wf.consumerBT.entity.CallPrice;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -39,11 +42,15 @@ public class service {
 
 
 
+    final  static ActorSystem<GreeterMain.SayHello> greeterMain = ActorSystem.create(com.wf.consumerBT.actor.GreeterMain.create(), "helloakka");
 
     @KafkaListener(topics = "tradeData7", groupId = "group_id")
     public void consume(Trade message, Acknowledgment acknowledgment) throws IOException {
+        greeterMain.tell(new com.wf.consumerBT.actor.GreeterMain.SayHello("Charles"));
+        System.out.println("acknowledgining ");
+
         acknowledgment.acknowledge();
-        calculateCallPrice(message,acknowledgment);
+        //calculateCallPrice(message,acknowledgment);
     }
 
 
@@ -53,15 +60,64 @@ public class service {
 
         List<Sigma> sigmas = sigmaCacheGetter.sigmaCache;
         List<CallPrice> callPrices = new ArrayList<>(5000*75);
-        for (int i = 0; i < maxScenarios; i++) {
 
-            callPrices.addAll(calculateCallPriceForEachScenario(trade,risks.get(i),sigmas.get(i),i));
+        List<CallPrice> callPriceList = callRepository.findCallPriceByTradeId(trade.getTradeId(),Sort.by("scenarioRow"));
+        int version = 0;
+        if(!CollectionUtils.isEmpty(callPriceList)){
+            version = callPriceList.stream().map(CallPrice::getLatestVersion).max(Integer::compareTo).get()+1;
         }
+
+        if (version == 0){
+            for (int i = 0; i < maxScenarios; i++) {
+                callPrices.addAll(calculateCallPriceForEachScenario(trade,risks.get(i),sigmas.get(i),i,version));
+            }
+        }else {
+            for (int i = 0; i < maxScenarios; i++) {
+                CallPrice callPrice = callPriceList.get(i);
+                callPrices.addAll(calculateCallPriceForEachScenario(trade,risks.get(i),sigmas.get(i),i,version,callPrice));
+            }
+
+        }
+
         callRepository.saveAll(callPrices);
 
     }
 
-    private List<CallPrice> calculateCallPriceForEachScenario(Trade trade,Risk risk,Sigma sigma,int index){
+    private List<CallPrice> calculateCallPriceForEachScenario(Trade trade,Risk risk,Sigma sigma,int index,int version
+            ,CallPrice callPriceFromDb){
+        String riskString = getRiskString(risk) ;
+        String sigmaString = getSigmaString(sigma);
+
+        String[] risksArray = riskString.split("~");
+        int colCount = risksArray.length;
+
+        String[] sigmaArray = sigmaString.split("~");
+        DecimalFormat df = new DecimalFormat("0.00");
+        List<CallPrice> res = new ArrayList<>();
+
+        List<CallPriceDoc> callPriceDocs = callPriceFromDb.getCallPriceDocs();
+        callPriceFromDb.setLatestVersion(version);
+        CallPriceDoc callPriceDoc = new CallPriceDoc();
+        callPriceDoc.setVersion(version);
+        callPriceDocs.add(callPriceDoc);
+        List<Double> prices = new ArrayList<>(76);
+        callPriceDoc.setCallPrice(prices);
+
+        for (int i = 0; i < colCount; i++) {
+            double price = stockPrice.callPrice(trade.getInitialIndexLevel(),
+                    trade.getStrikePrice(),
+                    Double.parseDouble(df.format(new Double(risksArray[i]))),
+                    Double.parseDouble(df.format(new Double(sigmaArray[i]))),
+                    trade.getTimeToMaturity());
+
+            prices.add(price);
+        }
+        res.add(callPriceFromDb);
+        return res;
+
+    }
+
+    private List<CallPrice> calculateCallPriceForEachScenario(Trade trade,Risk risk,Sigma sigma,int index,int version){
         String riskString = getRiskString(risk) ;
         String sigmaString = getSigmaString(sigma);
 
@@ -78,8 +134,9 @@ public class service {
         List<CallPriceDoc> callPriceDocs = new ArrayList<>();
         callPrice.setCallPriceDocs(callPriceDocs);
         callPrice.setScenarioRow(index);
+        callPrice.setLatestVersion(version);
         CallPriceDoc callPriceDoc = new CallPriceDoc();
-        callPriceDoc.setVersion("1");
+        callPriceDoc.setVersion(version);
         callPriceDocs.add(callPriceDoc);
         List<Double> prices = new ArrayList<>(76);
         callPriceDoc.setCallPrice(prices);

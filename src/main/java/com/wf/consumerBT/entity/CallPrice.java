@@ -28,6 +28,11 @@ public class CallPrice {
     @Field("scenariosCol")
     private Integer scenarioCol;
 
+    @Field("latestVersion")
+    private Integer latestVersion;
+
+
+
     public Integer getScenarioCol() {
         return scenarioCol;
     }
@@ -77,5 +82,13 @@ public class CallPrice {
     }
 
     public CallPrice() {
+    }
+
+    public Integer getLatestVersion() {
+        return latestVersion;
+    }
+
+    public void setLatestVersion(Integer latestVersion) {
+        this.latestVersion = latestVersion;
     }
 }

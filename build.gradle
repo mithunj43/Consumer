@@ -11,6 +11,10 @@ sourceCompatibility = '1.8'
 repositories {
 	mavenCentral()
 }
+def versions = [
+		ScalaBinary: "2.13"
+]
+
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
@@ -19,6 +23,8 @@ dependencies {
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
 	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.3'
+	implementation platform("com.typesafe.akka:akka-bom_${versions.ScalaBinary}:2.6.15")
+	implementation "com.typesafe.akka:akka-actor-typed_${versions.ScalaBinary}"
 
 }
 

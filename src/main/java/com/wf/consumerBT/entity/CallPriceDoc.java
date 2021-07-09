@@ -7,16 +7,16 @@ import java.util.List;
 public class CallPriceDoc {
 
     @Field("version")
-    public String version;
+    public Integer version;
 
     @Field("callPrice")
     private List<Double> callPrice;
 
-    public String getVersion() {
+    public Integer getVersion() {
         return version;
     }
 
-    public void setVersion(String version) {
+    public void setVersion(Integer version) {
         this.version = version;
     }
 
